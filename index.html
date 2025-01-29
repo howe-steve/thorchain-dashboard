@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thor & Maya Pools</title>
+    <style>
+        :root {
+            --primary: #031f3a;
+            --secondary: #1a73e8;
+            --background: #020c1b;
+            --surface: rgba(255, 255, 255, 0.05);
+            --text: #ffffff;
+            --text-muted: #b0c4de;
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            --card-min-height: 600px;
+            --stat-height: 42px;
+            --card-width: 600px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--background), var(--primary));
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .dashboard-container {
+            max-width: calc(var(--card-width) * 5 + 6rem);
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .sorting-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .sort-select {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: var(--primary);
+            color: var(--text);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .sort-direction {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: var(--primary);
+            color: var(--text);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .sort-direction:hover,
+        .sort-select:hover {
+            /* background: var(--surface); */
+        }
+
+        .sort-direction.active {
+            background: var(--secondary);
+        }
+
+        .pools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, var(--card-width));
+            gap: 2rem;
+            margin: 2rem 0;
+            justify-content: center;
+        }
+
+        .pool-card {
+            background: var(--primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: var(--card-width);
+            min-height: var(--card-min-height);
+        }
+
+        .pool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            backdrop-filter: blur(20px);
+            z-index: -1;
+        }
+
+        .pool-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.3);
+        }
+
+        .pool-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            height: 80px;
+        }
+
+        .pool-info img {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: var(--background);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            object-fit: cover;
+        }
+
+        .asset-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .pool-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            flex-grow: 1;
+        }
+
+        .stats-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            height: var(--stat-height);
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .stat-value {
+            font-size: 0.85rem;
+            color: var(--text);
+            font-weight: 500;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .stats-bottom {
+            grid-column: 1 / -1;
+            margin-top: 1rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+        }
+
+        .stats-bottom .stat-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-bottom .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 500px) {
+            :root {
+                --card-width: 100%;
+            }
+            
+            .pools-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Thorchain & Maya Dashboard</h1>
+        <div class="sorting-controls">
+            <select class="sort-select" id="sortField">
+                <option value="">Select sorting field...</option>
+                <option value="poolAPY">APR</option>
+                <option value="totalValueUSD">Total Value (USD)</option>
+                <option value="volume24h">24-hour Volume</option>
+                <option value="annualPercentageRate">30-day APR</option>
+                <option value="earnings">Earnings</option>
+                <option value="earningsAnnualAsPercentOfDepth">Earnings Annual %</option>
+                <option value="liquidityUnits">Liquidity Units</option>
+                <option value="synthSupply">Synth Supply</option>
+                <option value="synthUnits">Synth Units</option>
+                <option value="saversAPR">Savers APR</option>
+                <option value="saversDepth">Savers Depth</option>
+                <option value="saversUnits">Savers Units</option>
+                <option value="assetPrice">Asset Price</option>
+                <option value="assetPriceUSD">Asset Price (USD)</option>
+            </select>
+            <button class="sort-direction active" id="sortAsc">Ascending</button>
+            <button class="sort-direction" id="sortDesc">Descending</button>
+        </div>
+        <div id="pools-container" class="pools-grid"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const APIs = {
+                THORChain: 'https://midgard.thorswap.net/v2/',
+                MAYAChain: 'https://midgard.mayachain.info/v2/'
+            };
+
+            const fetchData = async (api, endpoint) => {
+                try {
+                    const response = await fetch(`${api}${endpoint}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    console.error(`Error fetching data from ${api}${endpoint}:`, error);
+                    return null;
+                }
+            };
+
+            const sortPools = (field, ascending = true) => {
+                const poolsContainer = document.getElementById('pools-container');
+                const cards = Array.from(poolsContainer.children);
+
+                cards.sort((a, b) => {
+                    let valueA = parseFloat(a.dataset[field]) || 0;
+                    let valueB = parseFloat(b.dataset[field]) || 0;
+                    return ascending ? valueA - valueB : valueB - valueA;
+                });
+
+                poolsContainer.innerHTML = '';
+                cards.forEach(card => poolsContainer.appendChild(card));
+            };
+
+            const createPoolStats = (pool) => {
+                const poolStats = document.createElement('div');
+                poolStats.className = 'pool-stats';
+
+                const leftColumn = document.createElement('div');
+                leftColumn.className = 'stats-column';
+                const leftStats = [
+                    { label: 'APR', value: safeFormatPercentage(pool.poolAPY) },
+                    { label: 'Total Value (USD)', value: `$${safeFormatNumber(pool.assetPriceUSD * pool.assetDepth, 1e8)}` },
+                    { label: '24-hour Volume', value: `$${safeFormatNumber(pool.volume24h)}` },
+                    { label: '30-day APR', value: safeFormatPercentage(pool.annualPercentageRate) },
+                    { label: 'Earnings', value: `$${safeFormatNumber(pool.earnings)}` },
+                    { label: 'Earnings (Annual % of Depth)', value: safeFormatPercentage(pool.earningsAnnualAsPercentOfDepth) }
+                ];
+
+                const rightColumn = document.createElement('div');
+                rightColumn.className = 'stats-column';
+                const rightStats = [
+                    { label: 'Liquidity Units', value: safeFormatNumber(pool.liquidityUnits) },
+                    { label: 'Synth Supply', value: safeFormatNumber(pool.synthSupply) },
+                    { label: 'Synth Units', value: safeFormatNumber(pool.synthUnits) },
+                    { label: 'Savers APR', value: safeFormatPercentage(pool.saversAPR) },
+                    { label: 'Savers Depth', value: safeFormatNumber(pool.saversDepth) },
+                    { label: 'Savers Units', value: safeFormatNumber(pool.saversUnits) }
+                ];
+
+                const bottomStats = document.createElement('div');
+                bottomStats.className = 'stats-bottom';
+                const bottomStatsData = [
+                    { label: 'Status', value: pool.status },
+                    { label: 'Asset Price', value: safeFormatNumber(pool.assetPrice, 1) },
+                    { label: 'Asset Price (USD)', value: `$${safeFormatNumber(pool.assetPriceUSD, 1)}` }
+                ];
+
+                const createStatItems = (stats, container) => {
+                    stats.forEach(stat => {
+                        const statDiv = document.createElement('div');
+                        statDiv.className = 'stat-item';
+                        statDiv.innerHTML = `<span class="stat-label">${stat.label}</span><span class="stat-value">${stat.value}</span>`;
+                        container.appendChild(statDiv);
+                    });
+                };
+
+                createStatItems(leftStats, leftColumn);
+                createStatItems(rightStats, rightColumn);
+                createStatItems(bottomStatsData, bottomStats);
+
+                poolStats.appendChild(leftColumn);
+                poolStats.appendChild(rightColumn);
+                poolStats.appendChild(bottomStats);
+
+                return poolStats;
+            };
+
+            const createPoolInfo = (pool, chain) => {
+                const poolInfo = document.createElement('div');
+                poolInfo.className = 'pool-info';
+
+                const assetImg = document.createElement('img');
+                assetImg.src = getAssetImage(pool.asset, chain);
+                assetImg.alt = pool.asset;
+
+                const assetName = document.createElement('div');
+                const [chainPart, assetPart] = pool.asset.split('.');
+                assetName.textContent = assetPart.split('-')[0].toUpperCase();
+                assetName.className = 'asset-name';
+
+                poolInfo.append(assetImg, assetName);
+                return poolInfo;
+            };
+
+            const createPoolCard = (pool, chain, container) => {
+                const card = document.createElement('div');
+                card.className = 'pool-card';
+
+                // Store sorting values as data attributes
+                card.dataset.poolAPY = pool.poolAPY || 0;
+                card.dataset.totalValueUSD = pool.assetPriceUSD * pool.assetDepth / 1e8 || 0;
+                card.dataset.volume24h = pool.volume24h / 1e8 || 0;
+                card.dataset.annualPercentageRate = pool.annualPercentageRate || 0;
+                card.dataset.earnings = pool.earnings / 1e8 || 0;
+                card.dataset.earningsAnnualAsPercentOfDepth = pool.earningsAnnualAsPercentOfDepth || 0;
+                card.dataset.liquidityUnits = pool.liquidityUnits / 1e8 || 0;
+                card.dataset.synthSupply = pool.synthSupply / 1e8 || 0;
+                card.dataset.synthUnits = pool.synthUnits / 1e8 || 0;
+                card.dataset.saversAPR = pool.saversAPR || 0;
+                card.dataset.saversDepth = pool.saversDepth / 1e8 || 0;
+                card.dataset.saversUnits = pool.saversUnits / 1e8 || 0;
+                card.dataset.assetPrice = pool.assetPrice / 1e8 || 0;
+                card.dataset.assetPriceUSD = pool.assetPriceUSD || 0;
+
+                const poolInfo = createPoolInfo(pool, chain);
+                const poolStats = createPoolStats(pool);
+
+                card.appendChild(poolInfo);
+                card.appendChild(poolStats);
+                container.appendChild(card);
+            };
+
+            const getAssetImage = (asset, chain) => {
+                const images = {
+                    THORChain: '/static/thor.png',
+                    MAYAChain: '/static/maya.png'
+                };
+                return images[chain] || 'https://via.placeholder.com/40';
+            };
+
+            const formatNumber = (num, maximumFractionDigits = 2) => 
+                Number(num).toLocaleString('en', { maximumFractionDigits });
+
+            const formatPercentage = (num) => `${(num * 100).toFixed(2)}%`;
+
+            const safeFormatNumber = (value, divisor = 1e8, maximumFractionDigits = 2) => 
+                value != null ? formatNumber(value / divisor, maximumFractionDigits) : 'N/A';
+
+            const safeFormatPercentage = (value) => 
+                value != null ? formatPercentage(value) : 'N/A';
+
+            // Set up sorting event listeners
+            document.getElementById('sortField').addEventListener('change', (e) => {
+                const field = e.target.value;
+                const ascending = document.getElementById('sortAsc').classList.contains('active');
+                if (field) {
+                    sortPools(field, ascending);
+                }
+            });
+
+            document.getElementById('sortAsc').addEventListener('click', (e) => {
+                const field = document.getElementById('sortField').value;
+                if (field) {
+                    e.target.classList.add('active');
+                    document.getElementById('sortDesc').classList.remove('active');
+                    sortPools(field, true);
+                }
+            });
+
+            document.getElementById('sortDesc').addEventListener('click', (e) => {
+                const field = document.getElementById('sortField').value;
+                if (field) {
+                    e.target.classList.add('active');
+                    document.getElementById('sortAsc').classList.remove('active');
+                    sortPools(field, false);
+                }
+            });
+
+            const populateDashboard = async () => {
+                const poolsContainer = document.getElementById('pools-container');
+                const chains = Object.keys(APIs);
+
+                for (const chain of chains) {
+                    const pools = await fetchData(APIs[chain], 'pools');
+                    if (pools) {
+                        pools.forEach(pool => createPoolCard(pool, chain, poolsContainer));
+                    }
+                }
+            };
+
+            populateDashboard();
+        });
+    </script>
+</body>
+</html>
