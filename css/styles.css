@@ -1,0 +1,211 @@
+:root {
+    --primary: #031f3a;
+    --secondary: #1a73e8;
+    --background: #020c1b;
+    --surface: rgba(255, 255, 255, 0.05);
+    --text: #ffffff;
+    --text-muted: #b0c4de;
+    --border: rgba(255, 255, 255, 0.1);
+    --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    --card-min-height: 600px;
+    --stat-height: 42px;
+    --card-width: 600px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--background), var(--primary));
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.dashboard-container {
+    max-width: calc(var(--card-width) * 5 + 6rem);
+    margin: 0 auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    text-align: center;
+}
+
+.sorting-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.sort-select {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: var(--primary);
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.sort-direction {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: var(--primary);
+    color: var(--text);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.sort-direction.active {
+    background: var(--secondary);
+}
+
+.pools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, var(--card-width));
+    gap: 2rem;
+    margin: 2rem 0;
+    justify-content: center;
+}
+
+.pool-card {
+    background: var(--primary);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: var(--card-width);
+    min-height: var(--card-min-height);
+}
+
+.pool-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    backdrop-filter: blur(20px);
+    z-index: -1;
+}
+
+.pool-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.3);
+}
+
+.pool-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    height: 80px;
+}
+
+.pool-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    object-fit: cover;
+}
+
+.asset-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.pool-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    flex-grow: 1;
+}
+
+.stats-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    height: var(--stat-height);
+    overflow: hidden;
+    width: 100%;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.stat-value {
+    font-size: 0.85rem;
+    color: var(--text);
+    font-weight: 500;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stats-bottom {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+}
+
+.stats-bottom .stat-item {
+    margin-bottom: 0.5rem;
+}
+
+.stats-bottom .stat-item:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 500px) {
+    :root {
+        --card-width: 100%;
+    }
+    
+    .pools-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-container {
+        padding: 1rem;
+    }
+}
