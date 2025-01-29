@@ -74,11 +74,6 @@
             transition: background-color 0.3s;
         }
 
-        .sort-direction:hover,
-        .sort-select:hover {
-            /* background: var(--surface); */
-        }
-
         .sort-direction.active {
             background: var(--secondary);
         }
@@ -345,7 +340,7 @@
 
                 const assetName = document.createElement('div');
                 const [chainPart, assetPart] = pool.asset.split('.');
-                assetName.textContent = assetPart.split('-')[0].toUpperCase();
+                assetName.textContent = `${assetPart.split('-')[0].toUpperCase()} (${chainPart})`;
                 assetName.className = 'asset-name';
 
                 poolInfo.append(assetImg, assetName);
@@ -374,6 +369,7 @@
 
                 const poolInfo = createPoolInfo(pool, chain);
                 const poolStats = createPoolStats(pool);
+                console.log(poolInfo)
 
                 card.appendChild(poolInfo);
                 card.appendChild(poolStats);
