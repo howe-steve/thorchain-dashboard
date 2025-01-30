@@ -33,6 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const poolStats = document.createElement('div');
         poolStats.className = 'pool-stats';
 
+        const topStats = document.createElement('div');
+        topStats.className = 'stats-top';
+        const topStatsData = [
+            { label: 'Asset Depth', value: safeFormatNumber(pool.assetDepth) },
+            { label: 'Rune Depth', value: safeFormatNumber(pool.runeDepth) }
+        ];
+
         const leftColumn = document.createElement('div');
         leftColumn.className = 'stats-column';
         const leftStats = [
@@ -60,7 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const bottomStatsData = [
             { label: 'Status', value: pool.status },
             { label: 'Asset Price', value: safeFormatNumber(pool.assetPrice, 1) },
-            { label: 'Asset Price (USD)', value: `$${safeFormatNumber(pool.assetPriceUSD, 1)}` }
+            { label: 'Asset Price (USD)', value: `$${safeFormatNumber(pool.assetPriceUSD, 1)}` },
+            { label: 'Risk Score', value: calculateRiskScore(pool.synthSupply, pool.synthUnits) }
         ];
 
         const createStatItems = (stats, container) => {
@@ -72,10 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
+        createStatItems(topStatsData, topStats);
         createStatItems(leftStats, leftColumn);
         createStatItems(rightStats, rightColumn);
         createStatItems(bottomStatsData, bottomStats);
 
+        poolStats.appendChild(topStats);
         poolStats.appendChild(leftColumn);
         poolStats.appendChild(rightColumn);
         poolStats.appendChild(bottomStats);
@@ -84,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const createPoolInfo = (pool, chain) => {
+        console.log(pool)
         const poolInfo = document.createElement('div');
         poolInfo.className = 'pool-info';
 
@@ -103,6 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const createPoolCard = (pool, chain, container) => {
         const card = document.createElement('div');
         card.className = 'pool-card';
+
+        // Calculate and store risk score as a data attribute
+        const riskScore = calculateRiskScore(pool.synthSupply, pool.synthUnits);
+        card.dataset.riskScore = riskScore;
 
         // Store sorting values as data attributes
         card.dataset.poolAPY = pool.poolAPY || 0;
@@ -146,6 +161,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const safeFormatPercentage = (value) => 
         value != null ? formatPercentage(value) : 'N/A';
+
+    const calculateRiskScore = (synthSupply, synthUnits) => {
+        if (synthUnits === 0) return 'N/A';
+        const riskScore = synthSupply / synthUnits;
+        return riskScore.toFixed(2);
+    };
 
     // Set up sorting event listeners
     document.getElementById('sortField').addEventListener('change', (e) => {

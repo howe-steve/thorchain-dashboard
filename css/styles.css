@@ -181,6 +181,28 @@ body {
     white-space: nowrap;
 }
 
+.stats-top {
+    grid-column: 1 / -1; 
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.stats-top .stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    height: var(--stat-height);
+    overflow: hidden;
+    width: 100%;
+}
+
 .stats-bottom {
     grid-column: 1 / -1;
     margin-top: 1rem;
