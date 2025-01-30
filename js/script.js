@@ -20,16 +20,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const cards = Array.from(poolsContainer.children);
 
         cards.sort((a, b) => {
-            let valueA = parseFloat(a.dataset[field]) || 0;
-            let valueB = parseFloat(b.dataset[field]) || 0;
-            return ascending ? valueA - valueB : valueB - valueA;
+            let valueA, valueB;
+            if (field === 'status') {
+                valueA = a.dataset.status.toLowerCase();
+                valueB = b.dataset.status.toLowerCase();
+                return ascending ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+            } else {
+                valueA = parseFloat(a.dataset[field]) || 0;
+                valueB = parseFloat(b.dataset[field]) || 0;
+                return ascending ? valueA - valueB : valueB - valueA;
+            }
         });
 
         poolsContainer.innerHTML = '';
         cards.forEach(card => poolsContainer.appendChild(card));
     };
 
-    const createPoolStats = (pool) => {
+    const createPoolStats = (pool, chain) => {
         const poolStats = document.createElement('div');
         poolStats.className = 'pool-stats';
 
@@ -47,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { label: 'Total Value (USD)', value: `$${safeFormatNumber(pool.assetPriceUSD * pool.assetDepth, 1e8)}` },
             { label: '24-hour Volume', value: `$${safeFormatNumber(pool.volume24h)}` },
             { label: '30-day APR', value: safeFormatPercentage(pool.annualPercentageRate) },
-            { label: 'Earnings', value: `$${safeFormatNumber(pool.earnings)}` },
+            { label: 'Earnings', value: `$${safeFormatNumber(pool.earnings, 1e8)}` },
             { label: 'Earnings (Annual % of Depth)', value: safeFormatPercentage(pool.earningsAnnualAsPercentOfDepth) }
         ];
 
@@ -64,11 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const bottomStats = document.createElement('div');
         bottomStats.className = 'stats-bottom';
+        const assetPriceLabel = chain === 'THORChain' ? 'Asset Price (Rune)' : 'Asset Price (Cacao)';
         const bottomStatsData = [
             { label: 'Status', value: pool.status },
-            { label: 'Asset Price', value: safeFormatNumber(pool.assetPrice, 1) },
+            { label: assetPriceLabel, value: safeFormatNumber(pool.assetPrice, 1) },
             { label: 'Asset Price (USD)', value: `$${safeFormatNumber(pool.assetPriceUSD, 1)}` },
-            { label: 'Risk Score', value: calculateRiskScore(pool.synthSupply, pool.synthUnits) }
+            { label: 'Synth Risk Score', value: calculateSynthRiskScore(pool.synthSupply, pool.synthUnits) }
         ];
 
         const createStatItems = (stats, container) => {
@@ -94,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const createPoolInfo = (pool, chain) => {
-        console.log(pool)
         const poolInfo = document.createElement('div');
         poolInfo.className = 'pool-info';
 
@@ -116,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
         card.className = 'pool-card';
 
         // Calculate and store risk score as a data attribute
-        const riskScore = calculateRiskScore(pool.synthSupply, pool.synthUnits);
-        card.dataset.riskScore = riskScore;
+        const riskScore = calculateSynthRiskScore(pool.synthSupply, pool.synthUnits);
+        card.dataset.riskScore = riskScore;    
 
         // Store sorting values as data attributes
         card.dataset.poolAPY = pool.poolAPY || 0;
@@ -134,9 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
         card.dataset.saversUnits = pool.saversUnits / 1e8 || 0;
         card.dataset.assetPrice = pool.assetPrice / 1e8 || 0;
         card.dataset.assetPriceUSD = pool.assetPriceUSD || 0;
+        card.dataset.status = pool.status.toLowerCase(); // Add status as a data attribute
 
         const poolInfo = createPoolInfo(pool, chain);
-        const poolStats = createPoolStats(pool);
+        const poolStats = createPoolStats(pool, chain);
 
         card.appendChild(poolInfo);
         card.appendChild(poolStats);
@@ -162,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const safeFormatPercentage = (value) => 
         value != null ? formatPercentage(value) : 'N/A';
 
-    const calculateRiskScore = (synthSupply, synthUnits) => {
+    const calculateSynthRiskScore = (synthSupply, synthUnits) => {
         if (synthUnits === 0) return 'N/A';
         const riskScore = synthSupply / synthUnits;
         return riskScore.toFixed(2);
