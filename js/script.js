@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
         MAYAChain: 'https://midgard.mayachain.info/v2/'
     };
 
+    // Store the initial order of cards when they're first loaded
+    let initialOrder = [];
+
     const fetchData = async (api, endpoint) => {
         try {
             const response = await fetch(`${api}${endpoint}`);
@@ -15,20 +18,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const sortPools = (field, ascending = true) => {
+    const getFavorites = () => {
+        return JSON.parse(localStorage.getItem('favorites')) || [];
+    };
+
+    const toggleFavorite = (asset) => {
+        const favorites = getFavorites();
+        const index = favorites.indexOf(asset);
+        if (index > -1) {
+            favorites.splice(index, 1);
+        } else {
+            favorites.push(asset);
+        }
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+    };
+
+    const isFavorite = (asset) => {
+        return getFavorites().includes(asset);
+    };
+
+    const sortPools = (field = null, ascending = true) => {
         const poolsContainer = document.getElementById('pools-container');
         const cards = Array.from(poolsContainer.children);
 
         cards.sort((a, b) => {
+            const isAFavorite = isFavorite(a.dataset.asset);
+            const isBFavorite = isFavorite(b.dataset.asset);
+
+            // Always sort by favorites first
+            if (isAFavorite !== isBFavorite) {
+                return isAFavorite ? -1 : 1;
+            }
+
+            // If no field specified, use initial order
+            if (!field) {
+                return initialOrder.indexOf(a.dataset.asset) - initialOrder.indexOf(b.dataset.asset);
+            }
+
+            // If both are favorites or both are not favorites, sort by the specified field
             let valueA, valueB;
             if (field === 'status') {
                 valueA = a.dataset.status.toLowerCase();
                 valueB = b.dataset.status.toLowerCase();
-                return ascending ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+                const comparison = valueA.localeCompare(valueB);
+                return ascending ? comparison : -comparison;
             } else {
                 valueA = parseFloat(a.dataset[field]) || 0;
                 valueB = parseFloat(b.dataset[field]) || 0;
-                return ascending ? valueA - valueB : valueB - valueA;
+                const comparison = valueA - valueB;
+                
+                // If values are equal, use initial order
+                if (comparison === 0) {
+                    return initialOrder.indexOf(a.dataset.asset) - initialOrder.indexOf(b.dataset.asset);
+                }
+                
+                return ascending ? comparison : -comparison;
             }
         });
 
@@ -121,33 +165,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const createPoolCard = (pool, chain, container) => {
         const card = document.createElement('div');
         card.className = 'pool-card';
+        card.dataset.asset = pool.asset;
 
-        // Calculate and store risk score as a data attribute
-        const riskScore = calculateSynthRiskScore(pool.synthSupply, pool.synthUnits);
-        card.dataset.riskScore = riskScore;    
+        const favoriteIcon = document.createElement('span');
+        favoriteIcon.className = 'favorite-icon';
+        favoriteIcon.textContent = isFavorite(pool.asset) ? '★' : '☆';
+        favoriteIcon.addEventListener('click', () => {
+            toggleFavorite(pool.asset);
+            favoriteIcon.textContent = isFavorite(pool.asset) ? '★' : '☆';
+            
+            // Get current sort state
+            const field = document.getElementById('sortField').value;
+            const ascending = document.getElementById('sortAsc').classList.contains('active');
+            
+            // Always sort after toggling favorite, even if no field is selected
+            sortPools(field, ascending);
+        });
 
-        // Store sorting values as data attributes
-        card.dataset.poolAPY = pool.poolAPY || 0;
-        card.dataset.totalValueUSD = pool.assetPriceUSD * pool.assetDepth / 1e8 || 0;
-        card.dataset.volume24h = pool.volume24h / 1e8 || 0;
-        card.dataset.annualPercentageRate = pool.annualPercentageRate || 0;
-        card.dataset.earnings = pool.earnings / 1e8 || 0;
-        card.dataset.earningsAnnualAsPercentOfDepth = pool.earningsAnnualAsPercentOfDepth || 0;
-        card.dataset.liquidityUnits = pool.liquidityUnits / 1e8 || 0;
-        card.dataset.synthSupply = pool.synthSupply / 1e8 || 0;
-        card.dataset.synthUnits = pool.synthUnits / 1e8 || 0;
-        card.dataset.saversAPR = pool.saversAPR || 0;
-        card.dataset.saversDepth = pool.saversDepth / 1e8 || 0;
-        card.dataset.saversUnits = pool.saversUnits / 1e8 || 0;
-        card.dataset.assetPrice = pool.assetPrice / 1e8 || 0;
-        card.dataset.assetPriceUSD = pool.assetPriceUSD || 0;
-        card.dataset.status = pool.status.toLowerCase(); // Add status as a data attribute
+        // Set all dataset values for sorting
+        Object.entries({
+            poolAPY: pool.poolAPY || 0,
+            totalValueUSD: (pool.assetPriceUSD * pool.assetDepth) / 1e8 || 0,
+            volume24h: pool.volume24h / 1e8 || 0,
+            annualPercentageRate: pool.annualPercentageRate || 0,
+            earnings: pool.earnings / 1e8 || 0,
+            earningsAnnualAsPercentOfDepth: pool.earningsAnnualAsPercentOfDepth || 0,
+            liquidityUnits: pool.liquidityUnits / 1e8 || 0,
+            synthSupply: pool.synthSupply / 1e8 || 0,
+            synthUnits: pool.synthUnits / 1e8 || 0,
+            saversAPR: pool.saversAPR || 0,
+            saversDepth: pool.saversDepth / 1e8 || 0,
+            saversUnits: pool.saversUnits / 1e8 || 0,
+            assetPrice: pool.assetPrice / 1e8 || 0,
+            assetPriceUSD: pool.assetPriceUSD || 0,
+            status: pool.status.toLowerCase()
+        }).forEach(([key, value]) => {
+            card.dataset[key] = value;
+        });
 
-        const poolInfo = createPoolInfo(pool, chain);
-        const poolStats = createPoolStats(pool, chain);
-
-        card.appendChild(poolInfo);
-        card.appendChild(poolStats);
+        card.appendChild(favoriteIcon);
+        card.appendChild(createPoolInfo(pool, chain));
+        card.appendChild(createPoolStats(pool, chain));
         container.appendChild(card);
     };
 
@@ -176,31 +234,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return riskScore.toFixed(2);
     };
 
-    // Set up sorting event listeners
+    // Event Listeners
     document.getElementById('sortField').addEventListener('change', (e) => {
         const field = e.target.value;
         const ascending = document.getElementById('sortAsc').classList.contains('active');
-        if (field) {
-            sortPools(field, ascending);
-        }
+        sortPools(field, ascending); // Always call sortPools, even with null field
     });
 
     document.getElementById('sortAsc').addEventListener('click', (e) => {
         const field = document.getElementById('sortField').value;
-        if (field) {
-            e.target.classList.add('active');
-            document.getElementById('sortDesc').classList.remove('active');
-            sortPools(field, true);
-        }
+        e.target.classList.add('active');
+        document.getElementById('sortDesc').classList.remove('active');
+        sortPools(field, true);
     });
 
     document.getElementById('sortDesc').addEventListener('click', (e) => {
         const field = document.getElementById('sortField').value;
-        if (field) {
-            e.target.classList.add('active');
-            document.getElementById('sortAsc').classList.remove('active');
-            sortPools(field, false);
-        }
+        e.target.classList.add('active');
+        document.getElementById('sortAsc').classList.remove('active');
+        sortPools(field, false);
     });
 
     const populateDashboard = async () => {
@@ -211,6 +263,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const pools = await fetchData(APIs[chain], 'pools');
             if (pools) {
                 pools.forEach(pool => createPoolCard(pool, chain, poolsContainer));
+                // Store initial order of assets after populating
+                initialOrder = Array.from(poolsContainer.children).map(card => card.dataset.asset);
+                // Initial sort to put favorites first
+                sortPools();
             }
         }
     };
