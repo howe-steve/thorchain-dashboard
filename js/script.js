@@ -4,8 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
         MAYAChain: 'https://midgard.mayachain.info/v2/'
     };
 
-    // Store the initial order of cards when they're first loaded
     let initialOrder = [];
+    let currentSortField = null;
+    let currentSortAscending = true;
 
     const fetchData = async (api, endpoint) => {
         try {
@@ -38,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const sortPools = (field = null, ascending = true) => {
+        currentSortField = field;
+        currentSortAscending = ascending;
+        
         const poolsContainer = document.getElementById('pools-container');
         const cards = Array.from(poolsContainer.children);
 
@@ -83,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const createPoolStats = (pool, chain) => {
         const poolStats = document.createElement('div');
         poolStats.className = 'pool-stats';
+        poolStats.style.position = 'relative';
 
         const topStats = document.createElement('div');
         topStats.className = 'stats-top';
@@ -166,23 +171,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = document.createElement('div');
         card.className = 'pool-card';
         card.dataset.asset = pool.asset;
+        card.style.position = 'relative';
 
         const favoriteIcon = document.createElement('span');
         favoriteIcon.className = 'favorite-icon';
         favoriteIcon.textContent = isFavorite(pool.asset) ? '★' : '☆';
+        favoriteIcon.style.fontSize = '2.4rem';
+        favoriteIcon.style.position = 'absolute';
+        favoriteIcon.style.right = '1.5rem';
+        favoriteIcon.style.top = '1.5rem';
+        favoriteIcon.style.cursor = 'pointer';
+        favoriteIcon.style.zIndex = '1';
+        
         favoriteIcon.addEventListener('click', () => {
             toggleFavorite(pool.asset);
             favoriteIcon.textContent = isFavorite(pool.asset) ? '★' : '☆';
-            
-            // Get current sort state
-            const field = document.getElementById('sortField').value;
-            const ascending = document.getElementById('sortAsc').classList.contains('active');
-            
-            // Always sort after toggling favorite, even if no field is selected
-            sortPools(field, ascending);
+            sortPools(currentSortField, currentSortAscending);
         });
 
-        // Set all dataset values for sorting
         Object.entries({
             poolAPY: pool.poolAPY || 0,
             totalValueUSD: (pool.assetPriceUSD * pool.assetDepth) / 1e8 || 0,
@@ -234,11 +240,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return riskScore.toFixed(2);
     };
 
-    // Event Listeners
     document.getElementById('sortField').addEventListener('change', (e) => {
         const field = e.target.value;
         const ascending = document.getElementById('sortAsc').classList.contains('active');
-        sortPools(field, ascending); // Always call sortPools, even with null field
+        sortPools(field, ascending);
     });
 
     document.getElementById('sortAsc').addEventListener('click', (e) => {
@@ -263,9 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const pools = await fetchData(APIs[chain], 'pools');
             if (pools) {
                 pools.forEach(pool => createPoolCard(pool, chain, poolsContainer));
-                // Store initial order of assets after populating
                 initialOrder = Array.from(poolsContainer.children).map(card => card.dataset.asset);
-                // Initial sort to put favorites first
                 sortPools();
             }
         }
