@@ -88,46 +88,81 @@ document.addEventListener('DOMContentLoaded', () => {
         const poolStats = document.createElement('div');
         poolStats.className = 'pool-stats';
         poolStats.style.position = 'relative';
+    
+        // Format numbers with proper scaling (1e8)
+        const formatValue = (value, nativeDecimal) => {
+            if (value == null) return 'N/A';
 
+            if (nativeDecimal === 8) {
+                // Assume value is already in the correct scale
+                return value.toLocaleString('en-US');
+            } else {
+                // Ensure nativeDecimal is a valid number and not zero
+                nativeDecimal = typeof nativeDecimal === 'number' && nativeDecimal !== 0 ? nativeDecimal : 1;
+
+                // Scale the value appropriately
+                const scaledValue = value / nativeDecimal;
+
+                // Check for non-finite values
+                if (!isFinite(scaledValue)) {
+                    console.warn(`Non-finite value detected: ${scaledValue}`);
+                    return 'N/A';
+                }
+
+                // Format the scaled value with commas
+                return scaledValue.toLocaleString('en-US');
+            }
+        };
+             
+        
+    
+        const formatPercentage = (value) => {
+            return value != null ? (value * 100).toLocaleString('en-US') + '%' : 'N/A';
+        };
+    
         const topStats = document.createElement('div');
         topStats.className = 'stats-top';
         const topStatsData = [
-            { label: 'Asset Depth', value: safeFormatNumber(pool.assetDepth) },
-            { label: 'Rune Depth', value: safeFormatNumber(pool.runeDepth) }
+            { label: 'Asset Depth', value: (pool.assetDepth / 1e8).toLocaleString('en-US') },
+            { label: 'Rune Depth', value: (pool.runeDepth / 1e8).toLocaleString('en-US') }
         ];
-
+    
         const leftColumn = document.createElement('div');
         leftColumn.className = 'stats-column';
         const leftStats = [
-            { label: 'APR', value: safeFormatPercentage(pool.poolAPY) },
-            { label: 'Total Value (USD)', value: `$${safeFormatNumber(pool.assetPriceUSD * pool.assetDepth, 1e8)}` },
-            { label: '24-hour Volume', value: `$${safeFormatNumber(pool.volume24h)}` },
-            { label: '30-day APR', value: safeFormatPercentage(pool.annualPercentageRate) },
-            { label: 'Earnings', value: `$${safeFormatNumber(pool.earnings, 1e8)}` },
-            { label: 'Earnings (Annual % of Depth)', value: safeFormatPercentage(pool.earningsAnnualAsPercentOfDepth) }
+            { label: 'APR', value: `${Number(pool.poolAPY).toFixed(2).toLocaleString('en-US')}%` },
+            { label: 'Total Value (USD)', value: `$${(pool.assetPriceUSD * pool.assetDepth / 1e8).toLocaleString('en-US')}` },
+            { label: '24-hour Volume', value: `${Number(pool.volume24h / 1e8).toLocaleString('en-US')}` },
+            { label: '30-day APR', value: `${Number(pool.annualPercentageRate).toFixed(2).toLocaleString('en-US')}%` },
+            { label: 'Earnings', value: `${Number(pool.earnings).toFixed(2).toLocaleString('en-US')}%` },
+            { label: 'Earnings (Annual % of Depth)', value: formatPercentage(pool.earningsAnnualAsPercentOfDepth) }
         ];
-
+    
         const rightColumn = document.createElement('div');
         rightColumn.className = 'stats-column';
         const rightStats = [
-            { label: 'Liquidity Units', value: safeFormatNumber(pool.liquidityUnits) },
-            { label: 'Synth Supply', value: safeFormatNumber(pool.synthSupply) },
-            { label: 'Synth Units', value: safeFormatNumber(pool.synthUnits) },
-            { label: 'Savers APR', value: safeFormatPercentage(pool.saversAPR) },
-            { label: 'Savers Depth', value: safeFormatNumber(pool.saversDepth) },
-            { label: 'Savers Units', value: safeFormatNumber(pool.saversUnits) }
-        ];
+            { label: 'Liquidity Units', value: `${Number(pool.liquidityUnits).toLocaleString('en-US')}` },
+            { label: 'Synth Supply', value: `${Number(pool.synthSupply / 1e8).toLocaleString('en-US')}` },
+            { label: 'Synth Units', value: `${Number(pool.synthUnits / 1e8).toLocaleString('en-US')}` },
+            { label: 'Savers APR', value: `${Number(pool.saversAPR).toFixed(2).toLocaleString('en-US')}%` },
+            { label: 'Savers Depth', value: `${Number(pool.saversDepth / 1e8).toLocaleString('en-US')}` },
+            { label: 'Savers Units', value: `${Number(pool.saversUnits / 1e8).toLocaleString('en-US')}` },
 
+        ];
+    
         const bottomStats = document.createElement('div');
         bottomStats.className = 'stats-bottom';
         const assetPriceLabel = chain === 'THORChain' ? 'Asset Price (Rune)' : 'Asset Price (Cacao)';
         const bottomStatsData = [
             { label: 'Status', value: pool.status },
-            { label: assetPriceLabel, value: safeFormatNumber(pool.assetPrice, 1) },
-            { label: 'Asset Price (USD)', value: `$${safeFormatNumber(pool.assetPriceUSD, 1)}` },
-            { label: 'Synth Risk Score', value: calculateSynthRiskScore(pool.synthSupply, pool.synthUnits) }
+            { label: 'Asset Price (Rune)', value: `${Number(pool.assetPrice).toFixed(2).toLocaleString('en-US')}` },
+            { label: 'Asset Price (USD)', value: `$${Number(pool.assetPriceUSD).toFixed(2).toLocaleString('en-US')}` },
+            { label: 'Synth Risk Score', value: 
+                pool.synthUnits === 0 ? 'N/A' : 
+                (pool.synthSupply / pool.synthUnits).toFixed(2)
+            }
         ];
-
+    
         const createStatItems = (stats, container) => {
             stats.forEach(stat => {
                 const statDiv = document.createElement('div');
@@ -136,17 +171,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.appendChild(statDiv);
             });
         };
-
+    
         createStatItems(topStatsData, topStats);
         createStatItems(leftStats, leftColumn);
         createStatItems(rightStats, rightColumn);
         createStatItems(bottomStatsData, bottomStats);
-
+    
         poolStats.appendChild(topStats);
         poolStats.appendChild(leftColumn);
         poolStats.appendChild(rightColumn);
         poolStats.appendChild(bottomStats);
-
+    
         return poolStats;
     };
 
@@ -192,17 +227,17 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.entries({
             poolAPY: pool.poolAPY || 0,
             totalValueUSD: (pool.assetPriceUSD * pool.assetDepth) / 1e8 || 0,
-            volume24h: pool.volume24h / 1e8 || 0,
+            volume24h: pool.volume24h || 0,
             annualPercentageRate: pool.annualPercentageRate || 0,
-            earnings: pool.earnings / 1e8 || 0,
+            earnings: pool.earnings || 0,
             earningsAnnualAsPercentOfDepth: pool.earningsAnnualAsPercentOfDepth || 0,
-            liquidityUnits: pool.liquidityUnits / 1e8 || 0,
-            synthSupply: pool.synthSupply / 1e8 || 0,
-            synthUnits: pool.synthUnits / 1e8 || 0,
+            liquidityUnits: pool.liquidityUnits || 0,
+            synthSupply: pool.synthSupply || 0,
+            synthUnits: pool.synthUnits || 0,
             saversAPR: pool.saversAPR || 0,
-            saversDepth: pool.saversDepth / 1e8 || 0,
-            saversUnits: pool.saversUnits / 1e8 || 0,
-            assetPrice: pool.assetPrice / 1e8 || 0,
+            saversDepth: pool.saversDepth || 0,
+            saversUnits: pool.saversUnits || 0,
+            assetPrice: pool.assetPrice || 0,
             assetPriceUSD: pool.assetPriceUSD || 0,
             status: pool.status.toLowerCase()
         }).forEach(([key, value]) => {
@@ -223,13 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return images[chain] || 'https://via.placeholder.com/40';
     };
 
-    const formatNumber = (num, maximumFractionDigits = 2) => 
-        Number(num).toLocaleString('en', { maximumFractionDigits });
+    // const formatNumber = (num, maximumFractionDigits = 2) => 
+    //     Number(num).toLocaleString('en', { maximumFractionDigits });
 
     const formatPercentage = (num) => `${(num * 100).toFixed(2)}%`;
-
-    const safeFormatNumber = (value, divisor = 1e8, maximumFractionDigits = 2) => 
-        value != null ? formatNumber(value / divisor, maximumFractionDigits) : 'N/A';
 
     const safeFormatPercentage = (value) => 
         value != null ? formatPercentage(value) : 'N/A';
