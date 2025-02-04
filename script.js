@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const createPoolStats = (pool, chain) => {
+        console.log(pool);
         const poolStats = document.createElement('div');
         poolStats.className = 'pool-stats';
         poolStats.style.position = 'relative';
@@ -130,18 +131,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const leftColumn = document.createElement('div');
         leftColumn.className = 'stats-column';
         const leftStats = [
-            { label: 'APR', value: `${Number(pool.poolAPY).toFixed(2).toLocaleString('en-US')}%` },
+            { label: 'APY', value: `${Number(pool.poolAPY).toFixed(2).toLocaleString('en-US')}%` },
             { label: 'Total Value (USD)', value: `$${(pool.assetPriceUSD * pool.assetDepth / 1e8).toLocaleString('en-US')}` },
             { label: '24-hour Volume', value: `${Number(pool.volume24h / 1e8).toLocaleString('en-US')}` },
             { label: '30-day APR', value: `${Number(pool.annualPercentageRate).toFixed(2).toLocaleString('en-US')}%` },
-            { label: 'Earnings', value: `${Number(pool.earnings).toFixed(2).toLocaleString('en-US')}%` },
-            { label: 'Earnings (Annual % of Depth)', value: formatPercentage(pool.earningsAnnualAsPercentOfDepth) }
+            { label: 'Earnings', value: `$${Number(pool.earnings / 1e8).toLocaleString('en-US')}` },
+            { label: 'Earnings (Annual % of Depth)', value: `${Number(pool.earningsAnnualAsPercentOfDepth).toFixed(2).toLocaleString('en-US')}%` }
         ];
     
         const rightColumn = document.createElement('div');
         rightColumn.className = 'stats-column';
         const rightStats = [
-            { label: 'Liquidity Units', value: `${Number(pool.liquidityUnits).toLocaleString('en-US')}` },
+            { label: 'Liquidity Units', value: `${Number(pool.liquidityUnits / 1e8).toLocaleString('en-US')}` },
             { label: 'Synth Supply', value: `${Number(pool.synthSupply / 1e8).toLocaleString('en-US')}` },
             { label: 'Synth Units', value: `${Number(pool.synthUnits / 1e8).toLocaleString('en-US')}` },
             { label: 'Savers APR', value: `${Number(pool.saversAPR).toFixed(2).toLocaleString('en-US')}%` },
